@@ -1,0 +1,130 @@
+#FROM container-registry.ubs.net/ubs/ibdevops/wheelright-node-16:latest as base
+FROM adevur/centos-nodejs:lts as base
+
+FROM base as builder
+
+RUN mkdir /server && chmod 755 /server
+WORKDIR /server
+
+#RUN curl -L -O  https://repo.continuum.io/archive/Anaconda3-5.0.0-Linux-x86_64.sh
+#RUN yum install -y git bzip2 gcc gcc-c++ make libX11-devel.x86_64 libxkbfile-devel.x86_64 libsecret-devel.x86_64
+
+RUN yum install net-tools -y; exit 0
+RUN microdnf install net-tools -y; exit 0
+RUN dnf install gcc --best --allowerasing -y
+RUN yum groupinstall "Development Tools" -y
+#RUN yum install centos-release-scl -y
+#RUN yum install libX11-devel.x86_64 -y
+RUN yum install libsecret-devel -y
+RUN yum install gcc-c++ -y
+#RUN yum install g++ -y
+#RUN curl –sL https://rpm.nodesource.com/setup_10.x | sudo bash -
+#RUN curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
+#RUN yum install nodejs -y
+RUN yum install gcc-c++ make
+RUN curl -sL https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
+RUN yum install yarn -y
+#RUN yum install npm -y
+#RUN yum install libxkbfile-devel.x86_64 -y
+#RUN yum install libsecret-devel -y
+#RUN yum install libX11-devel.x86_64 libxkbfile-devel.x86_64 libsecret-devel -y
+
+#RUN microdnf install yum
+RUN yum install -y \
+    wget \
+    tar \
+    python3 \
+    gzip \
+    git \
+    jq \
+    nano
+RUN yum install epel-release -y
+RUN yum install openssl-devel bzip2-devel libffi-devel xz-devel -y
+
+#### Download Python #####
+RUN wget https://www.python.org/ftp/python/3.8.16/Python-3.8.16.tgz
+RUN tar xvf Python-3.8.16.tgz
+RUN ./Python-3.8.16/configure --enable-optimizations
+RUN make altinstall
+#RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.8 1
+#RUN update-alternatives --install /usr/local/bin/python python /usr/local/bin/python3.8 2
+
+##### Removing pre-installed Python paths #####
+RUN alternatives --remove python /usr/libexec/no-python
+RUN alternatives --remove python3 /usr/bin/python3.6
+RUN alternatives --remove python /usr/bin/python3
+#RUN update-alternatives --config python --set-selections 1
+#RUN alternatives --set python /usr/bin/python3.8
+
+#### Alternative install for Python 3.8 to link to path /usr/bin/python ####
+RUN alternatives --install /usr/bin/python python /usr/local/bin/python3.8 3
+RUN pwd
+RUN alternatives --list
+#RUN alternatives --set python /usr/bin/unversioned-python
+#RUN python --version
+
+#RUN alternatives --set python /usr/bin/local/python3
+#RUN alternatives --config python
+#RUN update-alternatives --config /usr/local/bin/python3.8
+#RUN alternatives --set python /usr/local/bin/python3.8
+RUN alias python=/usr/local/bin/python3.8
+RUN export PATH=$PATH:/usr/local/bin/python3.8
+#RUN export PYTHONPATH=/usr/local/bin/python3.8
+#RUN python3.8 --version
+#RUN alternatives --install /usr/local/bin/python python /usr/local/bin/python3.8 1
+
+#### Set Python path in alternative list  and set auto select ####
+RUN update-alternatives --set python /usr/local/bin/python3.8
+RUN alternatives --auto python
+#RUN alternatives --config python
+#RUN alternatives --config python --set-selections 1
+RUN python --version
+RUN whereis python
+
+# RUN alternatives --auto python
+# RUN alternatives --list
+# RUN python --version
+# RUN update-alternatives --config python 1
+# RUN python3 --version
+# RUN whereis python3.8
+# RUN whereis python3
+# RUN whereis python
+# RUN python --version
+RUN npm install package.json --save-dev
+#RUN npm install yarn --global
+RUN yarn install --check-files
+#RUN npm install -g
+RUN npm install node-gyp -g
+RUN yarn global add node-gyp@latest
+RUN npm install postcss
+RUN npm install --save-dev electron
+#RUN npm config fix
+#RUN npm install --python=python3.8
+#RUN npm config set python python3.8
+#RUN node-gyp rebuild
+#RUN yarn config set registry https://cb-nexus.ubs.net/repository/public-npm
+RUN npm install --save-dev postcss gulp-postcss
+RUN ls
+#RUN npm run create-dynamic-bundles
+#RUN npm start
+#RUN yarn install
+RUN yarn config set "strict-ssl" false -g
+RUN yarn config set node_gyp $(npm prefix -g)/lib/node_modules/node-gyp/bin/node-gyp.js
+RUN cd /tmp && wget https://nodejs.org/download/release/v16.13.2/node-v16.13.2-headers.tar.gz
+RUN yarn config set tarball /tmp/node-v16.13.2-headers.tar.gz
+#RUN pip3 install git+https://chromium.googlesource.com/external/gyp
+#RUN yum install -y g++ gcc make python2.7 pkg-config libx11-dev libxkbfile-dev libsecret-1-dev
+COPY . .
+
+RUN ls
+#RUN npm run create-dynamic-bundles
+#RUN npm start
+#RUN yarn install
+RUN yarn cache clean
+RUN python3.8 --version
+RUN node -v
+RUN yarn
+
+EXPOSE 9888
+
+CMD ["./code-server.sh --launch"]
