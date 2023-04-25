@@ -157,4 +157,4 @@ RUN ls
 EXPOSE 9888
 
 #CMD ["./code-server.sh --launch"]
-CMD ["./code-server.sh"]
+CMD [".scripts/code-server.sh"]
